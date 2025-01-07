@@ -19,6 +19,11 @@
         buttonWrapper.classList.add('input-group-append');
         button.classList.add('btn', 'btn-primary');
         button.textContent = 'Add task';
+        button.disabled = true;
+
+        input.addEventListener('input', function () {
+            button.disabled = !input.value.trim();
+        });
 
         buttonWrapper.append(button);
         form.append(input);
@@ -38,7 +43,7 @@
         return list;
     }
 
-    function createToDoItem(name) {
+    function createToDoItem(todo) {
         let item = document.createElement('li');
         //кнопки перемещаем в элемент, который красиво покажет их в одной группе
         let buttonGroup = document.createElement('div');
@@ -48,7 +53,11 @@
         //устанавливаем стили для элемента списка, а также для размещения кнопок
         //в его правой части с помощью flex
         item.classList.add('list-group-item', 'd-flex', 'justify-content-between', 'align-items-center');
-        item.textContent = name;
+        item.textContent = todo.name;
+
+        if (todo.done) {
+            item.classList.add('list-group-item-success')
+        }
 
         buttonGroup.classList.add('btn-group', 'btn-group-sm');
         doneButton.classList.add('btn', 'btn-success');
@@ -56,23 +65,26 @@
         deleteButton.classList.add('btn', 'btn-danger');
         deleteButton.textContent = 'Delete';
 
+        doneButton.addEventListener('click', function () {
+            item.classList.toggle('list-group-item-success');
+        });
+
+        deleteButton.addEventListener('click', function () {
+            if (confirm('Are you sure?')) {
+                item.remove();
+            }
+        });
+
         //вкладываем кнопки вотдельный элемент, чтобы они объединились в один блок
         buttonGroup.append(doneButton);
         buttonGroup.append(deleteButton);
         item.append(buttonGroup);
 
-        //приложению нужен доступ к самому элементу и кнопкам, чтобы обрабатывать события нажатия
-        return {
-            item,
-            doneButton,
-            deleteButton,
-        };
+        return item;
     }
 
-    document.addEventListener('DOMContentLoaded', function () {
-        let container = document.getElementById('todo-app');
-
-        let todoAppTitle = createAppTitle('To do list');
+    function createTodoApp(container, title = 'To-Do List') {
+        let todoAppTitle = createAppTitle(title);
         let todoItemForm = createTodoItemForm();
         let todoList = createTodoList();
 
@@ -80,34 +92,26 @@
         container.append(todoItemForm.form);
         container.append(todoList);
 
-        //браузер создает событие submit На форме по нажатию на Enter  или на кнопку создания дела
         todoItemForm.form.addEventListener('submit', function (e) {
-            //эта строчка необходима, чтобы предотвратить стандартное действие браузера
-            //в данном случае мы не хотим, чтобы страница перезагружалась при отправке формы
             e.preventDefault();
 
-            //игнорируем создание элемента, если пользователь ничего не ввел в поле
-            if (!todoItemForm.input.value) {
+            if (!todoItemForm.input.value.trim()) {
                 return;
             }
 
-            let todoItem = createToDoItem(todoItemForm.input.value);
-
-            //добавляем обработчики событий на кнопки
-            todoItem.doneButton.addEventListener('click', function () {
-                todoItem.item.classList.toggle('list-group-item-success');
-            });
-            todoItem.deleteButton.addEventListener('click', function () {
-                if (confirm('Are you sure?')) {
-                    todoItem.item.remove();
-                }
+            let todoItem = createToDoItem({
+                name: todoItemForm.input.value.trim(),
+                done: false
             });
 
-            //создаем и добавляем в список новое дело с названием из поля для ввода
-            todoList.append(todoItem.item);
-
-            //обнуляем значение в поле, чтобы не пришлось стирать его вручную
+            todoList.append(todoItem);
             todoItemForm.input.value = '';
+            todoItemForm.button.disabled = true
         });
+    }
+
+    document.addEventListener('DOMContentLoaded', function () {
+        let container = document.getElementById('todo-app');
+        createTodoApp(container, 'My To-Do List');
     });
 })();
